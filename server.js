@@ -28,6 +28,7 @@ chat.on('connection', (socket) => {
 
     console.log('Client connected');
     totalClients += 1;
+    console.log('Client count: ', totalClients);
 
     socket.on('message', function incoming(message) {
         let messageObj = JSON.parse(message);
@@ -46,5 +47,7 @@ chat.on('connection', (socket) => {
     socket.on('close', () => {
         console.log('Client disconnected');
         totalClients -= 1;
+        console.log('Client count: ', totalClients);
+        
     });
 });
