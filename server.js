@@ -32,12 +32,23 @@ chat.on('connection', (socket) => {
 
     socket.on('message', function incoming(message) {
         let messageObj = JSON.parse(message);
+        console.log(messageObj);
+
         console.log('User: ' + messageObj.username + ' said: ' + messageObj.content);
 
         let broadcastMsg = {
             id: uuidv1(),
-            username: messageObj.username,
-            content: messageObj.content
+            type: messageObj.type
+        };
+
+        if (messageObj.type === 'chatMsg') {
+            broadcastMsg['username'] = messageObj.username;
+            broadcastMsg['content'] = messageObj.content;
+        }
+
+        if (messageObj.type === 'sysMsg') {
+            broadcastMsg['username'] = 'jChat-Server';
+            broadcastMsg['content'] = messageObj.oldName + ' changed their name to ' + messageObj.newName;
         }
 
         chat.broadcast(broadcastMsg);
