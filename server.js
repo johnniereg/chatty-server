@@ -24,9 +24,6 @@ chat.broadcast = function broadcast(data) {
     });
 }
 
-// Set up a callback that will run when a client connects to the server
-// When a client connects they are assigned a socket, represented by
-// the socket parameter in the callback.
 chat.on('connection', (socket) => {
 
     console.log('Client connected');
