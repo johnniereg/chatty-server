@@ -27,6 +27,15 @@ chat.broadcast = function broadcast(data) {
     });
 }
 
+// Function to broadcast messages to everyone but active client.
+chat.broadcastOthers = function broadcast(data) {
+    chat.clients.forEach((client) => {
+        if (client !== socket && client.readyState === ws.OPEN) {
+            client.send(JSON.stringify(data));
+        }
+    });
+}
+
 // Function to generate random colour hex.
 function getRandomHex() {
     const chars = '0123456789ABCDEF';
@@ -46,14 +55,54 @@ function assignHex() {
     return hexMsg;
 }
 
+// Chat log storage.
+let chatLog = [];
+
+const userJoinedMsg = () => {
+    let msg = {
+        id: uuidv1(),
+        type: 'sysMsg',
+        username: 'jChat-Server',
+        content: 'A new user has joined jChat.'
+    }
+    return msg;
+}
+
+const userLeftMsg = () => {
+    let msg = {
+        id: uuidv1(),
+        type: 'sysMsg',
+        username: 'jChat-Server',
+        content: 'A user has left jChat.'
+    }
+    return msg;
+}
+
 
 chat.on('connection', (socket) => {
 
     socket.send(JSON.stringify(assignHex()));
 
+    // Sends only 5 messages from log to the client.
+    if (chatLog.length > 6) {
+        let shortLog = chatLog.slice(Math.max(chatLog.length - 5, 1));
+        shortLog.forEach((entry) => {
+            socket.send(JSON.stringify(entry));
+        });
+    } else if (chatLog.length > 0 && chatLog.length < 6) {
+        chatLog.forEach((entry) => {
+            socket.send(JSON.stringify(entry));
+        });
+    }
+
     console.log('Client connected');
     totalClients.count += 1;
     chat.broadcast(totalClients);
+    chat.clients.forEach((client) => {
+        if (client !== socket && client.readyState === ws.OPEN) {
+            client.send(JSON.stringify(userJoinedMsg()));
+        }
+    });
 
     socket.on('message', function incoming(message) {
         let messageObj = JSON.parse(message);
@@ -75,6 +124,7 @@ chat.on('connection', (socket) => {
         }
 
         chat.broadcast(broadcastMsg);
+        chatLog.push(broadcastMsg);
     });
 
     // Set up a callback for when a client closes the socket. This usually means they closed their browser.
@@ -82,6 +132,8 @@ chat.on('connection', (socket) => {
         console.log('Client disconnected');
         totalClients.count -= 1;
         chat.broadcast(totalClients);
+        chat.broadcast(userLeftMsg());
+        
         
         
     });
