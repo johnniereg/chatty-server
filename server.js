@@ -27,7 +27,29 @@ chat.broadcast = function broadcast(data) {
     });
 }
 
+// Function to generate random colour hex.
+function getRandomHex() {
+    const chars = '0123456789ABCDEF';
+    let hex = '#';
+    for (var i = 0; i < 6; i++) {
+        hex += chars[Math.floor(Math.random() * 16)];
+    }
+    return hex;
+}
+
+// Function to build hex assignment message.
+function assignHex() {
+    const hexMsg = {
+        type: 'hex-assign',
+        hex: getRandomHex()
+    }
+    return hexMsg;
+}
+
+
 chat.on('connection', (socket) => {
+
+    socket.send(JSON.stringify(assignHex()));
 
     console.log('Client connected');
     totalClients.count += 1;
