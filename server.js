@@ -13,7 +13,10 @@ const server = express()
 const chat = new ws.Server({ server });
 
 // Counter for tracking active connections.
-let totalClients = 0;
+let totalClients = {
+    type: 'clients',
+    count: 0
+};
 
 // Function to broadcast messages to all active clients.
 chat.broadcast = function broadcast(data) {
@@ -27,14 +30,11 @@ chat.broadcast = function broadcast(data) {
 chat.on('connection', (socket) => {
 
     console.log('Client connected');
-    totalClients += 1;
-    console.log('Client count: ', totalClients);
+    totalClients.count += 1;
+    chat.broadcast(totalClients);
 
     socket.on('message', function incoming(message) {
         let messageObj = JSON.parse(message);
-        console.log(messageObj);
-
-        console.log('User: ' + messageObj.username + ' said: ' + messageObj.content);
 
         let broadcastMsg = {
             id: uuidv1(),
@@ -57,8 +57,9 @@ chat.on('connection', (socket) => {
     // Set up a callback for when a client closes the socket. This usually means they closed their browser.
     socket.on('close', () => {
         console.log('Client disconnected');
-        totalClients -= 1;
-        console.log('Client count: ', totalClients);
+        totalClients.count -= 1;
+        chat.broadcast(totalClients);
+        
         
     });
 });
