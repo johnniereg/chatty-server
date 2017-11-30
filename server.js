@@ -66,6 +66,7 @@ chat.on('connection', (socket) => {
         if (messageObj.type === 'chatMsg') {
             broadcastMsg['username'] = messageObj.username;
             broadcastMsg['content'] = messageObj.content;
+            broadcastMsg['userhex'] = messageObj.hex;
         }
 
         if (messageObj.type === 'sysMsg') {
