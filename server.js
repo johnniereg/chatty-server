@@ -27,15 +27,6 @@ chat.broadcast = function broadcast(data) {
     });
 }
 
-// Function to broadcast messages to everyone but active client.
-chat.broadcastOthers = function broadcast(data) {
-    chat.clients.forEach((client) => {
-        if (client !== socket && client.readyState === ws.OPEN) {
-            client.send(JSON.stringify(data));
-        }
-    });
-}
-
 // Function to generate random colour hex.
 function getRandomHex() {
     const chars = '0123456789ABCDEF';
@@ -55,9 +46,7 @@ function assignHex() {
     return hexMsg;
 }
 
-// Chat log storage.
-let chatLog = [];
-
+// Returns a 'user joined' message with unique ID.
 const userJoinedMsg = () => {
     let msg = {
         id: uuidv1(),
@@ -68,6 +57,7 @@ const userJoinedMsg = () => {
     return msg;
 }
 
+// Returns a 'user left' message with unique ID.
 const userLeftMsg = () => {
     let msg = {
         id: uuidv1(),
@@ -78,12 +68,18 @@ const userLeftMsg = () => {
     return msg;
 }
 
+// Chat log storage.
+let chatLog = [];
+
 
 chat.on('connection', (socket) => {
+    console.log('Client connected');
+    totalClients.count += 1;
 
+    // Assign unique colour to each client on connection.
     socket.send(JSON.stringify(assignHex()));
 
-    // Sends only 5 messages from log to the client.
+    // Sends last 5 messages from log to the client.
     if (chatLog.length > 6) {
         let shortLog = chatLog.slice(Math.max(chatLog.length - 5, 1));
         shortLog.forEach((entry) => {
@@ -95,15 +91,16 @@ chat.on('connection', (socket) => {
         });
     }
 
-    console.log('Client connected');
-    totalClients.count += 1;
+    // Update client count.
     chat.broadcast(totalClients);
+    // Notify other users that someone has joined.
     chat.clients.forEach((client) => {
         if (client !== socket && client.readyState === ws.OPEN) {
             client.send(JSON.stringify(userJoinedMsg()));
         }
     });
 
+    // Server side message handling.
     socket.on('message', function incoming(message) {
         let messageObj = JSON.parse(message);
 
@@ -127,14 +124,10 @@ chat.on('connection', (socket) => {
         chatLog.push(broadcastMsg);
     });
 
-    // Set up a callback for when a client closes the socket. This usually means they closed their browser.
     socket.on('close', () => {
         console.log('Client disconnected');
         totalClients.count -= 1;
         chat.broadcast(totalClients);
         chat.broadcast(userLeftMsg());
-        
-        
-        
     });
 });
